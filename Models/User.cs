@@ -12,9 +12,9 @@ namespace DisasterReliefFrontEnd.Models
         public string Prompt { get; set; } = string.Empty;
 
         // Profile information
-        public string Location { get; set; } = string.Empty;
-        public string Preference { get; set; } = string.Empty;
-        public string Skills { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        // public string Location { get; set; } = string.Empty;
+        // public string Preference { get; set; } = string.Empty;
+        // public string Skills { get; set; } = string.Empty;
+        // public string Description { get; set; } = string.Empty;
     }
 }

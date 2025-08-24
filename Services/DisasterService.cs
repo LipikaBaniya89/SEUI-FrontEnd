@@ -23,4 +23,26 @@ namespace DisasterReliefFrontEnd.Services
             return Task.FromResult(disaster);
         }
     }
+
+    public class DisasterResult
+    {
+        public string RecommendedDisaster { get; set; }
+        public string DisasterType { get; set; }
+        public int PeopleAffected { get; set; }
+        public string DisasterDetails { get; set; }
+        public string DisasterIcon { get; set; }
+        public List<HelpTask> HelpTasks { get; set; } = new();
+        public bool IsExpanded { get; set; } = false;
+    }
+
+    public class HelpTask
+    {
+        public string TaskDescription { get; set; }
+        public string HelpType { get; set; }
+        public string DetailedDescription { get; set; }
+        public string Link { get; set; }
+        public string TaskIcon { get; set; }
+        public List<string> Precautions { get; set; } = new();
+        public List<string> Steps { get; set; } = new(); // Step-by-step instructions
+    }
 }

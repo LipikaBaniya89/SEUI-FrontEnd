@@ -1,6 +1,6 @@
 ﻿    @page "/disaster-help"
     @using System.Net.Http.Json
-
+@using DisasterReliefFrontEnd.Services
     <h1 class="title">Disaster Help Dashboard</h1>
     <p class="subtitle">Quickly see disasters around you and how you can help.</p>
 
@@ -221,14 +221,12 @@
         private List<DisasterResult> Results { get; set; } = new();
 
         [Inject] private HttpClient Http { get; set; }
-
-        private async Task FindHelp()
+        protected override async Task OnInitializedAsync(){
+     await FindHelp();
+    }
+        async Task FindHelp()
         {
-            if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Skill) || string.IsNullOrWhiteSpace(Location))
-            {
-                ErrorMessage = "Please fill out all fields.";
-                return;
-            }
+ 
 
             ErrorMessage = null;
             IsLoading = true;
@@ -236,32 +234,9 @@
 
             try
             {
-                var response = await Http.PostAsJsonAsync("api1/help", new
+               
                 {
-                    name = Name,
-                    skill = Skill,
-                    location = Location,
-                    radius = Radius
-                });
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    ErrorMessage = $"HTTP error! Status: {response.StatusCode}";
-                }
-                else
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-
-                    if (content.TrimStart().StartsWith("["))
-                    {
-                        Results = await response.Content.ReadFromJsonAsync<List<DisasterResult>>();
-                    }
-                    else
-                    {
-                        var singleResult = await response.Content.ReadFromJsonAsync<DisasterResult>();
-                        if (singleResult != null)
-                            Results = new List<DisasterResult> { singleResult };
-                    }
+                    Results = AuthService.Results;        
                 }
             }
             catch (Exception ex)
@@ -279,26 +254,6 @@
             disaster.IsExpanded = !disaster.IsExpanded;
         }
 
-        public class DisasterResult
-        {
-            public string RecommendedDisaster { get; set; }
-            public string DisasterType { get; set; }
-            public int PeopleAffected { get; set; }
-            public string DisasterDetails { get; set; }
-            public string DisasterIcon { get; set; }
-            public List<HelpTask> HelpTasks { get; set; } = new();
-            public bool IsExpanded { get; set; } = false;
-        }
-
-     public class HelpTask
-    {
-        public string TaskDescription { get; set; }
-        public string HelpType { get; set; }
-        public string DetailedDescription { get; set; }
-        public string Link { get; set; }
-        public string TaskIcon { get; set; }
-        public List<string> Precautions { get; set; } = new();
-        public List<string> Steps { get; set; } = new(); // Step-by-step instructions
-    }
+      
 
     }

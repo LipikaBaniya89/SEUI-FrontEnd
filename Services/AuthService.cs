@@ -9,7 +9,7 @@ namespace DisasterReliefFrontEnd.Services
     {
         private readonly HttpClient _http;
         private User? _loggedInUser;
-
+        public static List<DisasterResult> Results { get; set; } = new();
         public AuthService(HttpClient http)
         {
             _http = http;
@@ -35,6 +35,17 @@ namespace DisasterReliefFrontEnd.Services
             {
                 // if your backend returns user info or JWT, deserialize here
                 _loggedInUser = await response.Content.ReadFromJsonAsync<User>();
+                var content = await response.Content.ReadAsStringAsync();
+                if (content.TrimStart().StartsWith("["))
+                {
+                    Results = await response.Content.ReadFromJsonAsync<List<DisasterResult>>();
+                }
+                else
+                {
+                    var singleResult = await response.Content.ReadFromJsonAsync<DisasterResult>();
+                    if (singleResult != null)
+                        Results = new List<DisasterResult> { singleResult };
+                }
                 return true;
             }
 

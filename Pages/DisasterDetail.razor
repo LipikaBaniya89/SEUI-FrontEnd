@@ -1,0 +1,63 @@
+@page "/disaster/{Id}"
+@inject DisasterReliefFrontEnd.Services.DisasterService DisasterService
+@inject NavigationManager Navigation
+
+<h3>Disaster Details</h3>
+
+@if (disaster == null)
+{
+    <div class="text-center my-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading disaster details...</p>
+    </div>
+}
+else
+{
+    <div class="card my-4 shadow-sm">
+        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@disaster.Name</h4>
+            <span class="badge @(disaster.IsEmergency ? "bg-danger" : "bg-secondary")">
+                @(disaster.IsEmergency ? "Emergency" : "Non-Emergency")
+            </span>
+        </div>
+
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">Location Radius</dt>
+                <dd class="col-sm-8">@disaster.LocationRadius km</dd>
+
+                <dt class="col-sm-4">Coordinates</dt>
+                <dd class="col-sm-8">@string.Join(", ", disaster.Coordinates)</dd>
+
+                <dt class="col-sm-4">More Info</dt>
+                <dd class="col-sm-8">
+                    <a href="@disaster.Link" target="_blank" class="btn btn-sm btn-outline-primary">
+                        Open Link
+                    </a>
+                </dd>
+            </dl>
+        </div>
+
+        <div class="card-footer text-end">
+            <button class="btn btn-outline-secondary" @onclick="GoBack">Back</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private DisasterReliefFrontEnd.Models.Disaster? disaster;
+
+    protected override async Task OnInitializedAsync()
+    {
+        disaster = await DisasterService.GetDisasterByIdAsync(Id);
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/disasters");
+    }
+}

@@ -1,46 +1,62 @@
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using DisasterReliefFrontEnd.Models;
 
 namespace DisasterReliefFrontEnd.Services
 {
     public class AuthService
     {
-        private readonly List<User> _users = new(); // In-memory user store
+        private readonly HttpClient _http;
         private User? _loggedInUser;
 
-        // Register new user
-        public bool Register(User user)
+        public AuthService(HttpClient http)
         {
-            if (_users.Any(u => u.Username == user.Username || u.Email == user.Email))
-                return false;
-
-            _users.Add(user);
-            return true;
+            _http = http;
         }
 
-        // Login
-        public bool Login(string username, string password)
+        // Call backend to register user
+        public async Task<bool> RegisterAsync(SignupRequest request)
         {
-            var user = _users.FirstOrDefault(u => u.Username == username && u.Password == password);
-            if (user != null)
+            var response = await _http.PostAsJsonAsync("api/auth/signup", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        // Call backend to login
+        public async Task<bool> LoginAsync(string email, string password)
+        {
+            var response = await _http.PostAsJsonAsync("api/auth/signin", new
             {
-                _loggedInUser = user;
+                email,
+                password
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                // if your backend returns user info or JWT, deserialize here
+                _loggedInUser = await response.Content.ReadFromJsonAsync<User>();
                 return true;
             }
+
             return false;
         }
 
-        // Get logged in user
+
+        // Get currently logged-in user
         public User? GetCurrentUser() => _loggedInUser;
 
-        // Update profile
-        public void UpdateProfile(User updatedUser)
+        // Update profile locally (or send to backend if you want persistence)
+        public async Task<bool> UpdateProfileAsync(User updatedUser)
         {
-            if (_loggedInUser != null)
+            if (_loggedInUser == null) return false;
+
+            var response = await _http.PutAsJsonAsync("api/auth/profile", updatedUser);
+            if (response.IsSuccessStatusCode)
             {
-                _loggedInUser.Age = updatedUser.Age;
-                _loggedInUser.Occupation = updatedUser.Occupation;
-                _loggedInUser.Prompt = updatedUser.Prompt;
+                _loggedInUser = updatedUser;
+                return true;
             }
+            return false;
         }
     }
 }

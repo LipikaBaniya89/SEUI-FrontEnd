@@ -1,153 +1,304 @@
-@page "/disaster-help"
-@using System.Net.Http.Json
+﻿    @page "/disaster-help"
+    @using System.Net.Http.Json
 
-<h1 class="display-4 text-center">Disaster Help Finder</h1>
-<p class="text-center">Find out how you can help in a disaster based on your skills.</p>
+    <h1 class="title">Disaster Help Dashboard</h1>
+    <p class="subtitle">Quickly see disasters around you and how you can help.</p>
 
-<div class="form-container">
-    <input @bind="Name" placeholder="Your Name" />
-    <input @bind="Skill" placeholder="Your Skill (e.g., Medic, Engineer)" />
-    <input @bind="Location" placeholder="Your Location (e.g., New York)" />
-    <input type="number" @bind="Radius" placeholder="Search Radius (miles)" />
-    <button @onclick="FindHelp">Find Help</button>
-</div>
+    <div class="form-container">
+        <input @bind="Name" placeholder="Your Name" />
+        <input @bind="Skill" placeholder="Your Skill (e.g., Medic, Engineer)" />
+        <input @bind="Location" placeholder="Your Location (e.g., New York)" />
+        <input type="number" @bind="Radius" placeholder="Search Radius (miles)" />
+        <button @onclick="FindHelp" class="btn-primary">Find Help</button>
+    </div>
 
-<div class="mt-4">
-    @if (IsLoading)
-    {
-        <div class="loading">Finding the best way you can help...</div>
-    }
-    else if (ErrorMessage != null)
-    {
-        <div class="error">@ErrorMessage</div>
-    }
-    else if (Result != null)
-    {
-        <h2>Disaster Information</h2>
-        <p><strong>Recommended Disaster:</strong> @Result.RecommendedDisaster</p>
-        <p><strong>Type:</strong> @Result.DisasterType</p>
-        <p><strong>People Affected:</strong> @Result.PeopleAffected</p>
-        <p><strong>Details:</strong> @Result.DisasterDetails</p>
-
-        <hr>
-        <h2>How You Can Help</h2>
-        @foreach (var task in Result.HelpTasks)
+    <div class="mt-5">
+        @if (IsLoading)
         {
-            <div class="task-card">
-                <h3>@task.TaskDescription</h3>
-                <p><strong>Type:</strong> @task.HelpType</p>
-                <p><strong>Details:</strong> @task.DetailedDescription</p>
-                <a href="@task.Link" target="_blank">Find out more here</a>
+            <div class="loading">🔄 Searching for disasters...</div>
+        }
+        else if (ErrorMessage != null)
+        {
+            <div class="error">@ErrorMessage</div>
+        }
+        else if (Results != null && Results.Any())
+        {
+            <div class="dashboard-grid">
+                @foreach (var disaster in Results)
+                {
+                    <div class="dashboard-card">
+                        <div class="card-top">
+                            @if (!string.IsNullOrEmpty(disaster.DisasterIcon))
+                            {
+                                <img src="@disaster.DisasterIcon" alt="icon" class="disaster-icon" />
+                            }
+                            <div>
+                                <h3>@disaster.RecommendedDisaster</h3>
+                                <span class="badge">@disaster.DisasterType</span>
+                            </div>
+                        </div>
+                        <p class="people-affected">Affected: @disaster.PeopleAffected</p>
+                        <button class="btn-expand" @onclick="@(() => ToggleExpanded(disaster))">
+                            @(disaster.IsExpanded ? "Hide Details ▲" : "View Details ▼")
+                        </button>
+
+                        @if (disaster.IsExpanded)
+                        {
+                            <div class="expanded-section">
+                                <p><strong>Details:</strong> @disaster.DisasterDetails</p>
+                                <h4>Tasks:</h4>
+                                @foreach (var task in disaster.HelpTasks)
+                                {
+                                    <div class="task-card">
+        @if (!string.IsNullOrEmpty(task.TaskIcon))
+        {
+            <img src="@task.TaskIcon" alt="task icon" class="task-icon" />
+        }
+        <div>
+            <h5>@task.TaskDescription</h5>
+            <p><strong>Type:</strong> @task.HelpType</p>
+            <p>@task.DetailedDescription</p>
+            <a href="@task.Link" target="_blank">Learn more</a>
+            @if (task.Steps != null && task.Steps.Any())
+    {
+        <div class="steps">
+            <strong>Steps:</strong>
+            <ol>
+                @foreach (var step in task.Steps)
+                {
+                    <li>@step</li>
+                }
+            </ol>
+        </div>
+    }
+
+            @if (task.Precautions != null && task.Precautions.Any())
+            {
+                <div class="precautions">
+                    <strong>Precautions:</strong>
+                    <ul>
+                        @foreach (var p in task.Precautions)
+                        {
+                            <li>@p</li>
+                        }
+                    </ul>
+                </div>
+
+            }
+        </div>
+    </div>
+
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         }
-    }
-</div>
-
-<style>
-.form-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    max-width: 400px;
-    margin: auto;
-}
-.form-container input, .form-container button {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-.form-container button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-.loading, .error, .no-results {
-    padding: 15px;
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 8px;
-}
-.task-card {
-    border: 1px solid #eee;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    text-align: left;
-}
-</style>
-
-@code {
-    private string Name { get; set; } = "";
-    private string Skill { get; set; } = "";
-    private string Location { get; set; } = "";
-    private int Radius { get; set; } = 500;
-
-    private bool IsLoading { get; set; } = false;
-    private string ErrorMessage { get; set; }
-    private DisasterResult Result { get; set; }
-
-    [Inject] private HttpClient Http { get; set; }
-
-    private async Task FindHelp()
-    {
-        if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Skill) || string.IsNullOrWhiteSpace(Location))
+        else
         {
-            ErrorMessage = "Please fill out all fields.";
-            return;
+            <div class="no-results">No disaster results found. Try changing your location or radius.</div>
         }
+    </div>
 
-        ErrorMessage = null;
-        IsLoading = true;
-        Result = null;
+    <style>
+    /* Typography */
+    .title { text-align: center; font-size: 2.5rem; font-weight: 700; margin-top: 20px; }
+    .subtitle { text-align: center; font-size: 1.2rem; color: #555; margin-bottom: 30px; }
 
-        try
+    /* Form */
+    .form-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        max-width: 600px;
+        margin: auto;
+    }
+    .form-container input {
+        flex: 1 1 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+    }
+    .btn-primary {
+        flex: 1 1 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .btn-primary:hover { background-color: #0056b3; }
+
+    /* Loading/Error */
+    .loading, .error, .no-results {
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 600;
+    }
+    .loading { background-color: #fff3cd; color: #856404; }
+    .error, .no-results { background-color: #f8d7da; color: #721c24; }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    /* Dashboard Card */
+    .dashboard-card {
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        padding: 20px;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+    }
+    .card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .disaster-icon { width: 50px; height: 50px; }
+    .people-affected { font-weight: 500; margin: 10px 0; }
+    .badge { background-color: #ff7043; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85rem; }
+
+    /* Expand button */
+    .btn-expand {
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    .btn-expand:hover { background: #0056b3; }
+
+    /* Expanded section */
+    .expanded-section { margin-top: 10px; }
+
+    /* Task Card */
+    .task-card {
+        display: flex;
+        gap: 10px;
+        background-color: #f0f7ff;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 8px;
+        align-items: flex-start;
+    }
+    .task-icon { width: 35px; height: 35px; margin-top: 4px; }
+    .precautions {
+        margin-top: 6px;
+        padding: 6px;
+        background-color: #fff7e6;
+        border-left: 3px solid #ffa500;
+        border-radius: 5px;
+    }
+    .precautions ul { margin: 0; padding-left: 18px; }
+    </style>
+
+    @code {
+        private string Name { get; set; } = "";
+        private string Skill { get; set; } = "";
+        private string Location { get; set; } = "";
+        private int Radius { get; set; } = 500;
+
+        private bool IsLoading { get; set; } = false;
+        private string ErrorMessage { get; set; }
+        private List<DisasterResult> Results { get; set; } = new();
+
+        [Inject] private HttpClient Http { get; set; }
+
+        private async Task FindHelp()
         {
-            var response = await Http.PostAsJsonAsync("/api/help", new
+            if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Skill) || string.IsNullOrWhiteSpace(Location))
             {
-                name = Name,
-                skill = Skill,
-                location = Location,
-                radius = Radius
-            });
-
-            if (!response.IsSuccessStatusCode)
-            {
-                ErrorMessage = $"HTTP error! Status: {response.StatusCode}";
+                ErrorMessage = "Please fill out all fields.";
+                return;
             }
-            else
+
+            ErrorMessage = null;
+            IsLoading = true;
+            Results.Clear();
+
+            try
             {
-                Result = await response.Content.ReadFromJsonAsync<DisasterResult>();
+                var response = await Http.PostAsJsonAsync("api1/help", new
+                {
+                    name = Name,
+                    skill = Skill,
+                    location = Location,
+                    radius = Radius
+                });
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    ErrorMessage = $"HTTP error! Status: {response.StatusCode}";
+                }
+                else
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+
+                    if (content.TrimStart().StartsWith("["))
+                    {
+                        Results = await response.Content.ReadFromJsonAsync<List<DisasterResult>>();
+                    }
+                    else
+                    {
+                        var singleResult = await response.Content.ReadFromJsonAsync<DisasterResult>();
+                        if (singleResult != null)
+                            Results = new List<DisasterResult> { singleResult };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"An error occurred: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"An error occurred: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
 
-    public class DisasterResult
-    {
-        public string RecommendedDisaster { get; set; }
-        public string DisasterType { get; set; }
-        public string PeopleAffected { get; set; }
-        public string DisasterDetails { get; set; }
-        public List<HelpTask> HelpTasks { get; set; } = new();
-    }
+        private void ToggleExpanded(DisasterResult disaster)
+        {
+            disaster.IsExpanded = !disaster.IsExpanded;
+        }
 
-    public class HelpTask
+        public class DisasterResult
+        {
+            public string RecommendedDisaster { get; set; }
+            public string DisasterType { get; set; }
+            public int PeopleAffected { get; set; }
+            public string DisasterDetails { get; set; }
+            public string DisasterIcon { get; set; }
+            public List<HelpTask> HelpTasks { get; set; } = new();
+            public bool IsExpanded { get; set; } = false;
+        }
+
+     public class HelpTask
     {
         public string TaskDescription { get; set; }
         public string HelpType { get; set; }
         public string DetailedDescription { get; set; }
         public string Link { get; set; }
+        public string TaskIcon { get; set; }
+        public List<string> Precautions { get; set; } = new();
+        public List<string> Steps { get; set; } = new(); // Step-by-step instructions
     }
-}
+
+    }

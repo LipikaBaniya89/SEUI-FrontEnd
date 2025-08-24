@@ -10,8 +10,12 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input class="form-control" @bind="newUser.Username" />
+                    <label class="form-label">First Name</label>
+                    <input class="form-control" @bind="newUser.FirstName" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input class="form-control" @bind="newUser.LastName" />
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Email</label>
@@ -22,19 +26,31 @@
                     <input class="form-control" type="password" @bind="newUser.Password" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Age</label>
-                    <input class="form-control" type="number" @bind="newUser.Age" min="1" />
+                    <label class="form-label">Address</label>
+                    <input class="form-control" @bind="newUser.Address" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Occupation</label>
-                    <input class="form-control" @bind="newUser.Occupation" />
+                    <label class="form-label">Radius (meters)</label>
+                    <input class="form-control" type="number" @bind="newUser.RadiusMeters" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Prompt / Message</label>
-                    <textarea class="form-control" rows="4" @bind="newUser.Prompt"></textarea>
+                    <label class="form-label">Phone</label>
+                    <input class="form-control" @bind="newUser.Phone" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Skills (comma separated)</label>
+                    <input class="form-control" @bind="skillsInput" @bind:event="oninput" />
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="newUser.WantsEmail" />
+                    <label class="form-check-label">Receive Email Notifications</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="newUser.WantsSms" />
+                    <label class="form-check-label">Receive SMS Notifications</label>
                 </div>
 
-                <button class="btn btn-danger w-100" @onclick="RegisterUser">Signup</button>
+                <button class="btn btn-danger w-100 mt-3" @onclick="RegisterUser">Signup</button>
 
                 @if (!string.IsNullOrEmpty(message))
                 {
@@ -46,13 +62,27 @@
 </div>
 
 @code {
-    private User newUser = new User();
+    private SignupRequest newUser = new SignupRequest();
+    private string _skillsInput = "";
+    private string skillsInput
+    {
+        get => _skillsInput;
+        set
+        {
+            _skillsInput = value;
+            newUser.Skills = _skillsInput
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .ToList();
+        }
+    }
+
     private string message = string.Empty;
 
     private async Task RegisterUser()
     {
-        bool success = AuthService.Register(newUser);
-        message = success ? "Signup successful!" : "User already exists.";
-        if (success) newUser = new User();
+        bool success = await AuthService.RegisterAsync(newUser);
+        message = success ? "Signup successful!" : "Signup failed!";
+        if (success) newUser = new SignupRequest();
     }
 }

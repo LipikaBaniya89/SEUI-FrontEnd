@@ -47,20 +47,23 @@ else
 }
 
 @code {
-    private User? user;
-    private string message = string.Empty;
+private User? user;
+private string message = string.Empty;
 
-    protected override void OnInitialized()
-    {
-        user = AuthService.GetCurrentUser();
-    }
+protected override void OnInitialized()
+{
+    user = AuthService.GetCurrentUser();
+}
 
-    private void UpdateProfile()
+// Make this method async Task instead of void
+private async Task UpdateProfile()
+{
+    if (user != null)
     {
-        if (user != null)
-        {
-            AuthService.UpdateProfile(user);
-            message = "Profile updated successfully!";
-        }
+        bool success = await AuthService.UpdateProfileAsync(user);
+
+        message = success ? "Profile updated successfully!" : "Profile update failed!";
     }
+}
+
 }

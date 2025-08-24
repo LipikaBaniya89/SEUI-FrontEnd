@@ -1,0 +1,153 @@
+@page "/disaster-help"
+@using System.Net.Http.Json
+
+<h1 class="display-4 text-center">Disaster Help Finder</h1>
+<p class="text-center">Find out how you can help in a disaster based on your skills.</p>
+
+<div class="form-container">
+    <input @bind="Name" placeholder="Your Name" />
+    <input @bind="Skill" placeholder="Your Skill (e.g., Medic, Engineer)" />
+    <input @bind="Location" placeholder="Your Location (e.g., New York)" />
+    <input type="number" @bind="Radius" placeholder="Search Radius (miles)" />
+    <button @onclick="FindHelp">Find Help</button>
+</div>
+
+<div class="mt-4">
+    @if (IsLoading)
+    {
+        <div class="loading">Finding the best way you can help...</div>
+    }
+    else if (ErrorMessage != null)
+    {
+        <div class="error">@ErrorMessage</div>
+    }
+    else if (Result != null)
+    {
+        <h2>Disaster Information</h2>
+        <p><strong>Recommended Disaster:</strong> @Result.RecommendedDisaster</p>
+        <p><strong>Type:</strong> @Result.DisasterType</p>
+        <p><strong>People Affected:</strong> @Result.PeopleAffected</p>
+        <p><strong>Details:</strong> @Result.DisasterDetails</p>
+
+        <hr>
+        <h2>How You Can Help</h2>
+        @foreach (var task in Result.HelpTasks)
+        {
+            <div class="task-card">
+                <h3>@task.TaskDescription</h3>
+                <p><strong>Type:</strong> @task.HelpType</p>
+                <p><strong>Details:</strong> @task.DetailedDescription</p>
+                <a href="@task.Link" target="_blank">Find out more here</a>
+            </div>
+        }
+    }
+</div>
+
+<style>
+.form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    max-width: 400px;
+    margin: auto;
+}
+.form-container input, .form-container button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+.form-container button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+.loading, .error, .no-results {
+    padding: 15px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+}
+.task-card {
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    text-align: left;
+}
+</style>
+
+@code {
+    private string Name { get; set; } = "";
+    private string Skill { get; set; } = "";
+    private string Location { get; set; } = "";
+    private int Radius { get; set; } = 500;
+
+    private bool IsLoading { get; set; } = false;
+    private string ErrorMessage { get; set; }
+    private DisasterResult Result { get; set; }
+
+    [Inject] private HttpClient Http { get; set; }
+
+    private async Task FindHelp()
+    {
+        if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Skill) || string.IsNullOrWhiteSpace(Location))
+        {
+            ErrorMessage = "Please fill out all fields.";
+            return;
+        }
+
+        ErrorMessage = null;
+        IsLoading = true;
+        Result = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/help", new
+            {
+                name = Name,
+                skill = Skill,
+                location = Location,
+                radius = Radius
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                ErrorMessage = $"HTTP error! Status: {response.StatusCode}";
+            }
+            else
+            {
+                Result = await response.Content.ReadFromJsonAsync<DisasterResult>();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public class DisasterResult
+    {
+        public string RecommendedDisaster { get; set; }
+        public string DisasterType { get; set; }
+        public string PeopleAffected { get; set; }
+        public string DisasterDetails { get; set; }
+        public List<HelpTask> HelpTasks { get; set; } = new();
+    }
+
+    public class HelpTask
+    {
+        public string TaskDescription { get; set; }
+        public string HelpType { get; set; }
+        public string DetailedDescription { get; set; }
+        public string Link { get; set; }
+    }
+}

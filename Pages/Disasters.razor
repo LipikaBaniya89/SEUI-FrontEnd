@@ -1,0 +1,42 @@
+@page "/disasters"
+@inject DisasterReliefFrontEnd.Services.DisasterService DisasterService
+
+<h2 class="text-danger mb-4">Current Disasters</h2>
+
+<div class="row">
+    @if (disasters == null)
+    {
+        <p>Loading disasters...</p>
+    }
+    else if (!disasters.Any())
+    {
+        <p>No disasters found.</p>
+    }
+    else
+    {
+        @foreach (var disaster in disasters)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">@disaster.Name</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Type:</strong> @(disaster.IsEmergency ? "Emergency" : "Non-Emergency")</p>
+                        <p><strong>Location Radius:</strong> @disaster.LocationRadius km</p>
+                        <a href="/disaster/@disaster.Id" target="_blank" class="btn btn-outline-danger w-100">More Info</a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<DisasterReliefFrontEnd.Models.Disaster>? disasters;
+
+    protected override async Task OnInitializedAsync()
+    {
+        disasters = await DisasterService.GetAllDisastersAsync();
+    }
+}

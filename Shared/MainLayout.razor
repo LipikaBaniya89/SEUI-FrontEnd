@@ -1,0 +1,14 @@
+@inherits LayoutComponentBase
+@using DisasterReliefFrontEnd.Shared
+
+<div class="d-flex flex-column min-vh-100 bg-light">
+    <NavMenu />
+
+    <div class="flex-grow-1 container py-4">
+        @Body
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-auto">
+        © 2025 Disaster Relief Initiative
+    </footer>
+</div>

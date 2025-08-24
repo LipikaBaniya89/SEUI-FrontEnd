@@ -1,0 +1,58 @@
+@page "/signup"
+@inject DisasterReliefFrontEnd.Services.AuthService AuthService
+@using DisasterReliefFrontEnd.Models
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white text-center">
+                <h3>Signup</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input class="form-control" @bind="newUser.Username" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" type="email" @bind="newUser.Email" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input class="form-control" type="password" @bind="newUser.Password" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Age</label>
+                    <input class="form-control" type="number" @bind="newUser.Age" min="1" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Occupation</label>
+                    <input class="form-control" @bind="newUser.Occupation" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Prompt / Message</label>
+                    <textarea class="form-control" rows="4" @bind="newUser.Prompt"></textarea>
+                </div>
+
+                <button class="btn btn-danger w-100" @onclick="RegisterUser">Signup</button>
+
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="alert alert-info mt-3" role="alert">@message</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private User newUser = new User();
+    private string message = string.Empty;
+
+    private async Task RegisterUser()
+    {
+        bool success = AuthService.Register(newUser);
+        message = success ? "Signup successful!" : "User already exists.";
+        if (success) newUser = new User();
+    }
+}

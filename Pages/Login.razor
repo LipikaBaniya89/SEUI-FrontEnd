@@ -1,0 +1,49 @@
+@page "/login"
+@inject DisasterReliefFrontEnd.Services.AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white text-center">
+                <h3>Login</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input class="form-control" @bind="username" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input class="form-control" type="password" @bind="password" />
+                </div>
+                <button class="btn btn-danger w-100" @onclick="LoginUser">Login</button>
+
+                @if (!string.IsNullOrEmpty(message))
+                {
+                    <div class="alert alert-info mt-3" role="alert">@message</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private string message = string.Empty;
+
+    private void LoginUser()
+    {
+        bool success = AuthService.Login(username, password);
+        if (success)
+        {
+            message = "Login successful!";
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            message = "Invalid credentials.";
+        }
+    }
+}
